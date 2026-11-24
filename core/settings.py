@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'auth_app.apps.AuthAppConfig',
     'quizly_app.apps.QuizlyAppConfig',
 ]
@@ -152,7 +153,8 @@ MAILERS = {
 }
 
 SIMPLE_JWT = {
-    # Der Token ist in diesem Fall nur 25 Sekunden gültig
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ROTATE_REFRESH_TOKENS': True,
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
