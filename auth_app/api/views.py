@@ -11,6 +11,10 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.token_blacklist.models import (
+    OutstandingToken,
+    BlacklistedToken
+)
 
 User = get_user_model()
 
@@ -123,6 +127,36 @@ class BaseTokenRefreshView(TokenRefreshView):
 
         return response
 
-
 class TokenLogoutView(APIView):
-    pass
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        outstanding_tokens = OutstandingToken.objects.filter(user=user) #setzt die Refresh Tokens auf die Blacklist
+
+        for token in outstanding_tokens:
+            BlacklistedToken.objects.get_or_create(token=token)
+
+        response = Response(
+            {
+                "detail": (
+                    "Log-Out successfully! All Tokens will be deleted. Refresh token is now invalid."
+                )
+            },
+            status=status.HTTP_200_OK
+        )
+
+        response.delete_cookie( #Cookies löschen
+            key="access_token",
+            path="/",
+            samesite="Lax"
+        )
+
+        response.delete_cookie(
+            key="refresh_token",
+            path="/",
+            samesite="Lax"
+        )
+
+        return response
