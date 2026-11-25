@@ -142,6 +142,11 @@ venv.bak/
 .postman
 postman
 
+# AI
+.claude
+CLAUDE.md
+logs
+
 # Spyder project settings
 .spyderproject
 .spyproject
