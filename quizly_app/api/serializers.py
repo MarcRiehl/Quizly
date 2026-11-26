@@ -1,6 +1,7 @@
 from urllib.parse import parse_qs, urlparse
 from rest_framework import serializers
 from quizly_app.models import Question, Quiz
+from django.utils import timezone
 
 YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com"}
 YOUTU_BE_HOST = "youtu.be"
@@ -72,3 +73,14 @@ class QuizUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quiz
         fields = ["title", "description"]
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get("title", instance.title)
+        instance.description = validated_data.get(
+            "description", instance.description
+        )
+        instance.updated_at = timezone.now()
+        instance.save()
+
+        return instance
+
