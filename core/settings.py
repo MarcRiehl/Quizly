@@ -156,7 +156,19 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'auth_app.api.authentication.CookieJWTAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
+
+GEMINI_API_KEY = getenv('GEMINI_API_KEY')
+GEMINI_MODEL = getenv('GEMINI_MODEL', 'gemini-flash-latest')
+# Comma-separated list of models tried in order if GEMINI_MODEL fails
+GEMINI_FALLBACK_MODELS = [
+    model.strip()
+    for model in getenv('GEMINI_FALLBACK_MODELS', 'gemini-2.5-flash').split(',')
+    if model.strip()
+]
 
 SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
