@@ -33,7 +33,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
-    'http://localhost:5500',
+    'localhost',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -45,6 +45,9 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:5500',
     'http://localhost:5500'
 ]
+
+# Required so the browser sends and accepts the JWT HTTP-only cookies
+CORS_ALLOW_CREDENTIALS = True
 
 
 # Application definition
@@ -162,17 +165,19 @@ REST_FRAMEWORK = {
 }
 
 GEMINI_API_KEY = getenv('GEMINI_API_KEY')
-GEMINI_MODEL = getenv('GEMINI_MODEL', 'gemini-flash-latest')
+GEMINI_MODEL = getenv('GEMINI_MODEL', 'gemini-3.8-flash')
 # Comma-separated list of models tried in order if GEMINI_MODEL fails
 GEMINI_FALLBACK_MODELS = [
     model.strip()
-    for model in getenv('GEMINI_FALLBACK_MODELS', 'gemini-2.5-flash').split(',')
+    for model in getenv(
+        'GEMINI_FALLBACK_MODELS', 'gemini-3.7-flash,gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite'
+    ).split(',')
     if model.strip()
 ]
 
 SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'ROTATE_REFRESH_TOKENS': True,
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }

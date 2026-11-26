@@ -1,3 +1,11 @@
 from django.contrib import admin
 
-# Register your models here.
+from quizly_app.models import Quiz, Question
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    pass
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    pass
