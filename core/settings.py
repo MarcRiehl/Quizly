@@ -170,7 +170,9 @@ GEMINI_MODEL = getenv('GEMINI_MODEL', 'gemini-3.8-flash')
 GEMINI_FALLBACK_MODELS = [
     model.strip()
     for model in getenv(
-        'GEMINI_FALLBACK_MODELS', 'gemini-3.7-flash,gemini-3.5-flash,gemini-3.5-flash-lite,gemini-3.1-flash-lite'
+        'GEMINI_FALLBACK_MODELS',
+        'gemini-3.7-flash,gemini-3.5-flash,'
+        'gemini-3.5-flash-lite,gemini-3.1-flash-lite',
     ).split(',')
     if model.strip()
 ]

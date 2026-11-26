@@ -1,4 +1,5 @@
 import tempfile
+import time
 from pathlib import Path
 
 import whisper
@@ -16,6 +17,8 @@ QUESTION_COUNT = 10
 OPTION_COUNT = 4
 # Client error codes where another model may succeed (not found, rate limit)
 FALLBACK_CLIENT_ERROR_CODES = {404, 429}
+# Wait times in seconds between retries of the same model on server errors
+SERVER_ERROR_RETRY_DELAYS = (2, 4, 8)
 
 # Whisper model is loaded lazily and cached for later requests
 _whisper_model = None
@@ -113,13 +116,24 @@ def request_quiz_from_model(client, model, transcript):
     )
 
 
+def request_quiz_with_retry(client, model, transcript):
+    """Request a quiz from one model, retrying on server errors (e.g. 503
+    overload) with increasing delays before giving up on this model."""
+    for delay in SERVER_ERROR_RETRY_DELAYS:
+        try:
+            return request_quiz_from_model(client, model, transcript)
+        except errors.ServerError:
+            time.sleep(delay)
+    return request_quiz_from_model(client, model, transcript)
+
+
 def generate_quiz_data(transcript):
     """Let Gemini create quiz data, falling back to other models on
     overload, rate limit or unknown model."""
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
     for model in get_gemini_models():
         try:
-            response = request_quiz_from_model(client, model, transcript)
+            response = request_quiz_with_retry(client, model, transcript)
         except errors.APIError as error:
             if is_fallback_error(error):
                 continue
