@@ -46,14 +46,29 @@ class QuizCreateSerializer(serializers.Serializer):
     url = serializers.URLField()
 
     def validate_url(self, value):
-        """Accept only YouTube URLs and normalize them to watch?v=<id>."""
+        """Accept only YouTube URLs and normalize them to watch?v=<id>.
+
+        Supports youtube.com links with a "v" query parameter and
+        youtu.be short links.
+
+        Args:
+            value (str): The URL submitted by the user.
+
+        Returns:
+            str: The normalized URL in the form
+            https://www.youtube.com/watch?v=<video_id>.
+
+        Raises:
+            serializers.ValidationError: If the URL is not a YouTube URL
+                or does not contain a video ID.
+        """
         parsed = urlparse(value)
         host = (parsed.hostname or "").lower()
 
-        if host in YOUTUBE_HOSTS: 
-            video_id = parse_qs(parsed.query).get("v", [""])[0] # wandelt den Link in ein einheitliches Format um s.u.
-        elif host == YOUTU_BE_HOST: 
-            video_id = parsed.path.lstrip("/").split("/")[0] # wandelt den Teilen Link um
+        if host in YOUTUBE_HOSTS:
+            video_id = parse_qs(parsed.query).get("v", [""])[0]
+        elif host == YOUTU_BE_HOST:
+            video_id = parsed.path.lstrip("/").split("/")[0]
         else:
             raise serializers.ValidationError(
                 "Only YouTube URLs are allowed."
@@ -75,6 +90,18 @@ class QuizUpdateSerializer(serializers.ModelSerializer):
         fields = ["title", "description"]
 
     def update(self, instance, validated_data):
+        """Update the title and description of a quiz.
+
+        Fields missing from validated_data keep their current value.
+        The updated_at timestamp is always refreshed.
+
+        Args:
+            instance (Quiz): The quiz to update.
+            validated_data (dict): The validated title and/or description.
+
+        Returns:
+            Quiz: The updated and saved quiz instance.
+        """
         instance.title = validated_data.get("title", instance.title)
         instance.description = validated_data.get(
             "description", instance.description
@@ -83,4 +110,3 @@ class QuizUpdateSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-

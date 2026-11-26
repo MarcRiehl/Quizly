@@ -5,6 +5,7 @@ User = get_user_model()
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for registering new users."""
     confirmed_password = serializers.CharField(write_only=True)
 
     class Meta:

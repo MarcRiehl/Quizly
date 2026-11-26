@@ -25,8 +25,15 @@ class QuizzesViewSet(ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        """Own quizzes for list, all quizzes otherwise so foreign ones
-        return 403 instead of 404."""
+        """Return the quizzes available for the current action.
+
+        The list action only returns the user's own quizzes. All other
+        actions use all quizzes, so accessing a foreign quiz returns 403
+        (via IsQuizOwner) instead of 404.
+
+        Returns:
+            QuerySet: Quizzes with prefetched questions, newest first.
+        """
         queryset = Quiz.objects.prefetch_related("questions").order_by(
             "-created_at"
         )
@@ -35,6 +42,13 @@ class QuizzesViewSet(ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
+        """Return the serializer class for the current action.
+
+        Returns:
+            type[Serializer]: QuizCreateSerializer for create,
+            QuizUpdateSerializer for partial_update, otherwise
+            QuizSerializer.
+        """
         if self.action == "create":
             return QuizCreateSerializer
         if self.action == "partial_update":
@@ -42,9 +56,19 @@ class QuizzesViewSet(ModelViewSet):
         return QuizSerializer
 
     def create(self, request, *args, **kwargs):
-        """Generate a quiz from a YouTube URL and return it."""
+        """Generate a quiz from a YouTube URL and return it.
+
+        Args:
+            request: The DRF request containing the YouTube URL.
+            *args: Additional positional arguments from the router.
+            **kwargs: Additional keyword arguments from the router.
+
+        Returns:
+            Response: 201 with the created quiz, 400 if the URL is invalid
+            or the video is unavailable, or 500 if the quiz generation
+            pipeline fails.
+        """
         serializer = self.get_serializer(data=request.data)
-        # Invalid URL or request data -> 400
         serializer.is_valid(raise_exception=True)
         try:
             quiz = create_quiz_from_url(
@@ -55,7 +79,6 @@ class QuizzesViewSet(ModelViewSet):
                 {"detail": str(error)}, status=status.HTTP_400_BAD_REQUEST
             )
         except QuizGenerationError as error:
-            # Pipeline failure (transcription, Gemini, validation) -> 500
             return Response(
                 {"detail": str(error)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -65,7 +88,18 @@ class QuizzesViewSet(ModelViewSet):
         )
 
     def partial_update(self, request, *args, **kwargs):
-        """Update title/description and return the full quiz."""
+        """Update title/description and return the full quiz.
+
+        Args:
+            request: The DRF request containing title and/or description.
+            *args: Additional positional arguments from the router.
+            **kwargs: Additional keyword arguments from the router (pk).
+
+        Returns:
+            Response: 200 with the full updated quiz, 400 on invalid data,
+            403 if the quiz belongs to another user, or 404 if it does
+            not exist.
+        """
         quiz = self.get_object()
         serializer = self.get_serializer(quiz, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
